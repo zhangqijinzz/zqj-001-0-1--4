@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>睡前脑内清仓机</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="stars"></div>
+    
+    <div class="container">
+        <header class="header">
+            <h1>🌙 睡前脑内清仓机</h1>
+            <p class="subtitle">让大脑休息，让心平静</p>
+            <div class="backup-actions">
+                <button id="exportBackupBtn" class="backup-btn" title="导出备份">
+                    <span>📤</span> 导出备份
+                </button>
+                <button id="importBackupBtn" class="backup-btn" title="导入备份">
+                    <span>📥</span> 导入恢复
+                </button>
+                <input type="file" id="importBackupFile" accept=".json" class="hidden">
+            </div>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="jot">念头速记</button>
+            <button class="tab-btn" data-tab="breathe">呼吸清单</button>
+            <button class="tab-btn" data-tab="tomorrow">明日盒子</button>
+            <button class="tab-btn" data-tab="ritual">入睡仪式</button>
+            <button class="tab-btn" data-tab="insights">数据洞察</button>
+            <button class="tab-btn" data-tab="reminder">提醒设置</button>
+        </nav>
+
+        <main class="content">
+            <section id="jot" class="tab-content active">
+                <div class="jot-section">
+                    <div class="input-area">
+                        <textarea id="thoughtInput" placeholder="把脑子里的想法写下来..." rows="3"></textarea>
+                        <div class="category-btns">
+                            <button class="cat-btn todo" data-category="todo">
+                                <span class="cat-icon">📋</span>
+                                <span>待办</span>
+                            </button>
+                            <button class="cat-btn worry" data-category="worry">
+                                <span class="cat-icon">💭</span>
+                                <span>担忧</span>
+                            </button>
+                            <button class="cat-btn idea" data-category="idea">
+                                <span class="cat-icon">💡</span>
+                                <span>灵感</span>
+                            </button>
+                            <button class="cat-btn later" data-category="later">
+                                <span class="cat-icon">🌅</span>
+                                <span>明天再说</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="search-section">
+                        <div class="search-header">
+                            <div class="search-input-wrapper">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" id="searchInput" placeholder="搜索记录内容..." class="search-input">
+                                <button class="clear-search" id="clearSearchBtn" style="display: none;">✕</button>
+                            </div>
+                            <button class="toggle-filter-btn" id="toggleFilterBtn">
+                                <span>⚙️ 筛选</span>
+                            </button>
+                        </div>
+                        
+                        <div class="filter-panel" id="filterPanel" style="display: none;">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label>分类筛选</label>
+                                    <div class="filter-checkboxes" id="categoryFilters">
+                                        <label class="filter-checkbox">
+                                            <input type="checkbox" value="todo" checked>
+                                            <span>📋 待办</span>
+                                        </label>
+                                        <label class="filter-checkbox">
+                                            <input type="checkbox" value="worry" checked>
+                                            <span>💭 担忧</span>
+                                        </label>
+                                        <label class="filter-checkbox">
+                                            <input type="checkbox" value="idea" checked>
+                                            <span>💡 灵感</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="filter-group">
+                                    <label>日期范围</label>
+                                    <div class="date-range">
+                                        <input type="date" id="dateFrom" class="date-input" title="起始日期">
+                                        <span class="date-separator">至</span>
+                                        <input type="date" id="dateTo" class="date-input" title="结束日期">
+                                    </div>
+                                    <div class="quick-date-btns">
+                                        <button class="quick-date-btn" data-days="7">近7天</button>
+                                        <button class="quick-date-btn" data-days="30">近30天</button>
+                                        <button class="quick-date-btn" data-days="90">近90天</button>
+                                        <button class="quick-date-btn" id="clearDateBtn">清除</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label>时间段</label>
+                                    <div class="time-slots" id="timeSlotFilters">
+                                        <label class="filter-checkbox">
+                                            <input type="checkbox" value="morning" checked>
+                                            <span>🌅 早晨 (6-12)</span>
+                                        </label>
+                                        <label class="filter-checkbox">
+                                            <input type="checkbox" value="afternoon" checked>
+                                            <span>☀️ 下午 (12-18)</span>
+                                        </label>
+                                        <label class="filter-checkbox">
+                                            <input type="checkbox" value="evening" checked>
+                                            <span>🌆 傍晚 (18-24)</span>
+                                        </label>
+                                        <label class="filter-checkbox">
+                                            <input type="checkbox" value="night" checked>
+                                            <span>🌙 深夜 (0-6)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="filter-group">
+                                    <label>排序方式</label>
+                                    <div class="sort-options">
+                                        <label class="sort-radio">
+                                            <input type="radio" name="sortBy" value="date-desc" checked>
+                                            <span>最新优先</span>
+                                        </label>
+                                        <label class="sort-radio">
+                                            <input type="radio" name="sortBy" value="date-asc">
+                                            <span>最早优先</span>
+                                        </label>
+                                        <label class="sort-radio">
+                                            <input type="radio" name="sortBy" value="category">
+                                            <span>按分类</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="search-results-info" id="searchResultsInfo" style="display: none;">
+                        <span id="resultsCount"></span>
+                        <button class="reset-filters-btn" id="resetFiltersBtn">重置筛选</button>
+                    </div>
+                    
+                    <div class="thoughts-container" id="normalView">
+                        <div class="thoughts-section">
+                            <h3>📋 待办事项</h3>
+                            <div id="todoList" class="thought-list"></div>
+                        </div>
+                        <div class="thoughts-section">
+                            <h3>💭 担忧情绪</h3>
+                            <div id="worryList" class="thought-list"></div>
+                        </div>
+                        <div class="thoughts-section">
+                            <h3>💡 灵感记录</h3>
+                            <div id="ideaList" class="thought-list"></div>
+                        </div>
+                    </div>
+
+                    <div class="search-results-container" id="searchResultsView" style="display: none;">
+                        <div class="thoughts-section">
+                            <h3>🔍 搜索结果</h3>
+                            <div id="searchResultsList" class="thought-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="breathe" class="tab-content">
+                <div class="breathe-section">
+                    <div class="breathe-guide">
+                        <div class="breathe-circle" id="breatheCircle">
+                            <span id="breatheText">准备开始</span>
+                        </div>
+                        <p class="breathe-instruction" id="breatheInstruction">跟随呼吸节奏，让思绪慢慢消散</p>
+                        <div class="breathe-phase-timer" id="breathePhaseTimer" style="display:none;">
+                            <span class="phase-timer-value" id="phaseTimerValue">0</span>
+                            <span class="phase-timer-unit">秒</span>
+                        </div>
+                    </div>
+                    
+                    <div class="breathe-list-container">
+                        <h3>未处理的思绪</h3>
+                        <div id="breatheList" class="breathe-list"></div>
+
+                        <div class="breathe-mode-section">
+                            <h3>呼吸模式</h3>
+                            <div class="breathe-mode-options" id="breatheModeOptions">
+                                <button class="breathe-mode-btn active" data-mode="relax4" title="4-4-4-4 基础放松">
+                                    <span class="mode-icon">🧘</span>
+                                    <span class="mode-name">基础放松</span>
+                                    <span class="mode-desc">4-4-4-4</span>
+                                </button>
+                                <button class="breathe-mode-btn" data-mode="deep478" title="4-7-8 深度放松">
+                                    <span class="mode-icon">😴</span>
+                                    <span class="mode-name">深度放松</span>
+                                    <span class="mode-desc">4-7-8</span>
+                                </button>
+                                <button class="breathe-mode-btn" data-mode="box" title="4-4-4-4 盒式呼吸">
+                                    <span class="mode-icon">📦</span>
+                                    <span class="mode-name">盒式呼吸</span>
+                                    <span class="mode-desc">4-4-4-4</span>
+                                </button>
+                                <button class="breathe-mode-btn" data-mode="energy" title="6-0-6-0 活力呼吸">
+                                    <span class="mode-icon">⚡</span>
+                                    <span class="mode-name">活力呼吸</span>
+                                    <span class="mode-desc">6-0-6-0</span>
+                                </button>
+                                <button class="breathe-mode-btn" data-mode="custom" title="自定义">
+                                    <span class="mode-icon">⚙️</span>
+                                    <span class="mode-name">自定义</span>
+                                    <span class="mode-desc">自由设置</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="breathe-phase-config" id="breathePhaseConfig">
+                            <h3>阶段时长 <span class="phase-config-mode-label" id="phaseConfigModeLabel">(基础放松)</span></h3>
+                            <div class="phase-config-grid">
+                                <div class="phase-config-item" data-phase="inhale">
+                                    <label>吸气</label>
+                                    <div class="phase-config-control">
+                                        <button class="phase-adjust-btn" data-action="decrease" data-phase="inhale">−</button>
+                                        <span class="phase-duration-value" id="phaseInhale">4</span>
+                                        <button class="phase-adjust-btn" data-action="increase" data-phase="inhale">+</button>
+                                    </div>
+                                    <span class="phase-unit">秒</span>
+                                </div>
+                                <div class="phase-config-item" data-phase="hold1">
+                                    <label>保持</label>
+                                    <div class="phase-config-control">
+                                        <button class="phase-adjust-btn" data-action="decrease" data-phase="hold1">−</button>
+                                        <span class="phase-duration-value" id="phaseHold1">4</span>
+                                        <button class="phase-adjust-btn" data-action="increase" data-phase="hold1">+</button>
+                                    </div>
+                                    <span class="phase-unit">秒</span>
+                                </div>
+                                <div class="phase-config-item" data-phase="exhale">
+                                    <label>呼气</label>
+                                    <div class="phase-config-control">
+                                        <button class="phase-adjust-btn" data-action="decrease" data-phase="exhale">−</button>
+                                        <span class="phase-duration-value" id="phaseExhale">4</span>
+                                        <button class="phase-adjust-btn" data-action="increase" data-phase="exhale">+</button>
+                                    </div>
+                                    <span class="phase-unit">秒</span>
+                                </div>
+                                <div class="phase-config-item" data-phase="hold2">
+                                    <label>放松</label>
+                                    <div class="phase-config-control">
+                                        <button class="phase-adjust-btn" data-action="decrease" data-phase="hold2">−</button>
+                                        <span class="phase-duration-value" id="phaseHold2">4</span>
+                                        <button class="phase-adjust-btn" data-action="increase" data-phase="hold2">+</button>
+                                    </div>
+                                    <span class="phase-unit">秒</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="voice-guide-section">
+                            <h3>语音引导</h3>
+                            <div class="voice-guide-settings">
+                                <div class="voice-guide-toggle">
+                                    <label class="setting-label">
+                                        <span class="setting-icon">🎙️</span>
+                                        <span>开启语音引导</span>
+                                    </label>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="voiceGuideEnabled">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="voice-guide-controls" id="voiceGuideControls">
+                                    <div class="voice-control-row">
+                                        <span class="voice-control-label">🔊 音量</span>
+                                        <input type="range" id="voiceVolume" class="voice-slider" min="0" max="100" value="70">
+                                        <span class="voice-control-value" id="voiceVolumeValue">70%</span>
+                                    </div>
+                                    <div class="voice-control-row">
+                                        <span class="voice-control-label">⚡ 语速</span>
+                                        <input type="range" id="voiceRate" class="voice-slider" min="30" max="150" value="80">
+                                        <span class="voice-control-value" id="voiceRateValue">0.8x</span>
+                                    </div>
+                                    <div class="voice-control-row">
+                                        <span class="voice-control-label">🎤 语音</span>
+                                        <select id="voiceSelect" class="voice-select">
+                                            <option value="">默认语音</option>
+                                        </select>
+                                    </div>
+                                    <button class="voice-test-btn" id="voiceTestBtn">试听语音</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="startBreathe" class="btn-primary">开始呼吸练习</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tomorrow" class="tab-content">
+                <div class="tomorrow-section">
+                    <div class="tomorrow-header">
+                        <h2>🌅 明日盒子</h2>
+                        <p>这些都交给明天的自己处理吧</p>
+                    </div>
+                    
+                    <div id="tomorrowList" class="tomorrow-list"></div>
+                    
+                    <div class="tomorrow-actions">
+                        <button id="clearTomorrow" class="btn-secondary">清空盒子</button>
+                        <button id="exportTomorrow" class="btn-primary">导出清单</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="ritual" class="tab-content">
+                <div class="ritual-section">
+                    <div class="ritual-animation">
+                        <div class="moon-container">
+                            <div class="moon"></div>
+                            <div class="stars-ritual"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="ritual-options">
+                        <h3>选择白噪音</h3>
+                        <div class="noise-options">
+                            <button class="noise-btn" data-noise="rain">🌧️ 雨声</button>
+                            <button class="noise-btn" data-noise="ocean">🌊 海浪</button>
+                            <button class="noise-btn" data-noise="forest">🌲 森林</button>
+                            <button class="noise-btn" data-noise="fire">🔥 篝火</button>
+                        </div>
+                        
+                        <div class="countdown-setting">
+                            <label>关屏倒计时</label>
+                            <select id="countdownSelect">
+                                <option value="0">不开启</option>
+                                <option value="5">5 分钟</option>
+                                <option value="10">10 分钟</option>
+                                <option value="15">15 分钟</option>
+                                <option value="20">20 分钟</option>
+                                <option value="30">30 分钟</option>
+                            </select>
+                            <button id="startRitual" class="btn-primary">开始入睡仪式</button>
+                        </div>
+                    </div>
+                    
+                    <div id="ritualTimer" class="ritual-timer hidden">
+                        <div class="timer-display">
+                            <span id="timerMinutes">10</span>
+                            <span>:</span>
+                            <span id="timerSeconds">00</span>
+                        </div>
+                        <p id="noiseHint">🌙 夜色温柔，好梦将至</p>
+                        <div class="volume-control">
+                            <span class="volume-icon">🔊</span>
+                            <input type="range" id="volumeSlider" min="0" max="100" value="50" class="volume-slider">
+                            <span class="volume-icon">🔉</span>
+                        </div>
+                        <button id="stopRitual" class="btn-secondary">停止仪式</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="reminder" class="tab-content">
+                <div class="reminder-section">
+                    <div class="reminder-header">
+                        <h2>⏰ 睡前提醒设置</h2>
+                        <p>设定固定时间，让应用提醒你开始睡前整理</p>
+                    </div>
+
+                    <div class="reminder-card">
+                        <div class="reminder-status">
+                            <div class="status-indicator" id="notificationStatus">
+                                <span class="status-dot"></span>
+                                <span class="status-text" id="statusText">未授权</span>
+                            </div>
+                            <button id="requestPermissionBtn" class="btn-primary btn-small">申请通知权限</button>
+                        </div>
+                    </div>
+
+                    <div class="reminder-settings">
+                        <div class="setting-group">
+                            <label class="setting-label">
+                                <span class="setting-icon">🔔</span>
+                                <span>启用提醒</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableReminder">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-group" id="timeSettingGroup">
+                            <label class="setting-label">
+                                <span class="setting-icon">🕐</span>
+                                <span>提醒时间</span>
+                            </label>
+                            <input type="time" id="reminderTime" value="22:30" class="time-input">
+                        </div>
+
+                        <div class="setting-group" id="repeatSettingGroup">
+                            <label class="setting-label">
+                                <span class="setting-icon">📅</span>
+                                <span>重复模式</span>
+                            </label>
+                            <div class="repeat-options">
+                                <label class="repeat-option">
+                                    <input type="radio" name="repeatMode" value="daily" checked>
+                                    <span>每日</span>
+                                </label>
+                                <label class="repeat-option">
+                                    <input type="radio" name="repeatMode" value="weekdays">
+                                    <span>仅工作日</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="setting-group" id="contentSettingGroup">
+                            <label class="setting-label">
+                                <span class="setting-icon">💬</span>
+                                <span>提醒内容</span>
+                            </label>
+                            <input type="text" id="reminderTitle" placeholder="提醒标题" class="text-input" value="该准备睡觉了">
+                            <input type="text" id="reminderMessage" placeholder="提醒消息" class="text-input" value="放下手机，开始睡前整理吧">
+                        </div>
+
+                        <div class="setting-group" id="soundSettingGroup">
+                            <label class="setting-label">
+                                <span class="setting-icon">🔊</span>
+                                <span>提醒音效</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableSound" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="reminder-preview">
+                        <h3>📱 预览通知</h3>
+                        <div class="notification-preview">
+                            <div class="preview-icon">🌙</div>
+                            <div class="preview-content">
+                                <div class="preview-title" id="previewTitle">该准备睡觉了</div>
+                                <div class="preview-message" id="previewMessage">放下手机，开始睡前整理吧</div>
+                            </div>
+                        </div>
+                        <button id="testNotificationBtn" class="btn-secondary btn-small">测试通知</button>
+                    </div>
+
+                    <div class="next-reminder-info" id="nextReminderInfo" style="display: none;">
+                        <div class="next-reminder-icon">⏳</div>
+                        <div class="next-reminder-text">
+                            <span>下次提醒：</span>
+                            <span id="nextReminderTime"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="insights" class="tab-content">
+                <div class="insights-section">
+                    <div class="insights-header">
+                        <h2>📊 思维模式洞察</h2>
+                        <p>通过数据了解自己的思维习惯</p>
+                    </div>
+
+                    <div class="time-range-selector">
+                        <button class="time-range-btn active" data-range="week">本周</button>
+                        <button class="time-range-btn" data-range="month">本月</button>
+                        <button class="time-range-btn" data-range="custom">自定义</button>
+                        <div class="custom-date-range" id="customDateRange" style="display: none;">
+                            <input type="date" id="insightsDateFrom" class="date-input">
+                            <span>至</span>
+                            <input type="date" id="insightsDateTo" class="date-input">
+                        </div>
+                    </div>
+
+                    <div class="stats-overview">
+                        <div class="stat-card">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="totalEntries">0</div>
+                                <div class="stat-label">总记录数</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🔥</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="streakDays">0</div>
+                                <div class="stat-label">连续天数</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="activeDays">0</div>
+                                <div class="stat-label">活跃天数</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⏰</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="avgPerDay">0</div>
+                                <div class="stat-label">日均记录</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3 class="chart-title">📈 记录趋势</h3>
+                            <div class="chart-container">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3 class="chart-title">🥧 分类占比</h3>
+                            <div class="chart-container">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                            <div class="category-legend" id="categoryLegend"></div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3 class="chart-title">🌙 活跃时段</h3>
+                            <div class="chart-container">
+                                <canvas id="timeChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3 class="chart-title">💡 周内分布</h3>
+                            <div class="chart-container">
+                                <canvas id="weekdayChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="suggestions-card">
+                        <h3 class="chart-title">💭 思维洞察与建议</h3>
+                        <div class="suggestions-list" id="suggestionsList">
+                            <div class="empty-state">暂无足够数据生成洞察</div>
+                        </div>
+                    </div>
+
+                    <div class="word-cloud-card">
+                        <h3 class="chart-title">☁️ 关键词云</h3>
+                        <div class="word-cloud-container" id="wordCloud">
+                            <div class="empty-state">记录更多内容生成词云</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="undo-redo-bar" id="undoRedoBar">
+        <button class="undo-redo-btn" id="undoBtn" disabled title="撤销 (Ctrl+Z)">
+            <span class="undo-redo-icon">↩</span>
+            <span>撤销</span>
+        </button>
+        <div class="undo-redo-divider"></div>
+        <button class="undo-redo-btn" id="redoBtn" disabled title="重做 (Ctrl+Shift+Z)">
+            <span class="undo-redo-icon">↪</span>
+            <span>重做</span>
+        </button>
+    </div>
+
+    <script src="src/app.js" type="module"></script>
+</body>
+</html>
