@@ -65,9 +65,49 @@
                                 <input type="text" id="searchInput" placeholder="搜索记录内容..." class="search-input">
                                 <button class="clear-search" id="clearSearchBtn" style="display: none;">✕</button>
                             </div>
-                            <button class="toggle-filter-btn" id="toggleFilterBtn">
-                                <span>⚙️ 筛选</span>
-                            </button>
+                            <div class="header-actions">
+                                <button class="toggle-batch-btn" id="toggleBatchBtn">
+                                    <span>☑️ 批量操作</span>
+                                </button>
+                                <button class="toggle-filter-btn" id="toggleFilterBtn">
+                                    <span>⚙️ 筛选</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="batch-toolbar" id="batchToolbar" style="display: none;">
+                            <div class="batch-info">
+                                <span>已选择 <strong id="selectedCount">0</strong> 条</span>
+                            </div>
+                            <div class="batch-actions">
+                                <button class="batch-btn" id="selectAllBtn" title="全选">
+                                    <span>☑️ 全选</span>
+                                </button>
+                                <button class="batch-btn" id="invertSelectBtn" title="反选">
+                                    <span>🔄 反选</span>
+                                </button>
+                                <div class="batch-divider"></div>
+                                <button class="batch-btn batch-cat todo" data-batch-category="todo" title="批量改为待办">
+                                    <span>📋 待办</span>
+                                </button>
+                                <button class="batch-btn batch-cat worry" data-batch-category="worry" title="批量改为担忧">
+                                    <span>💭 担忧</span>
+                                </button>
+                                <button class="batch-btn batch-cat idea" data-batch-category="idea" title="批量改为灵感">
+                                    <span>💡 灵感</span>
+                                </button>
+                                <div class="batch-divider"></div>
+                                <button class="batch-btn batch-tomorrow" id="batchTomorrowBtn" title="批量移入明日盒子">
+                                    <span>🌅 明日盒子</span>
+                                </button>
+                                <button class="batch-btn batch-delete" id="batchDeleteBtn" title="批量删除">
+                                    <span>🗑️ 删除</span>
+                                </button>
+                                <div class="batch-divider"></div>
+                                <button class="batch-btn batch-cancel" id="cancelBatchBtn" title="取消批量操作">
+                                    <span>✕ 取消</span>
+                                </button>
+                            </div>
                         </div>
                         
                         <div class="filter-panel" id="filterPanel" style="display: none;">
@@ -578,6 +618,6 @@
         </button>
     </div>
 
-    <script src="src/app.js" type="module"></script>
+    <script src="src/app.js?v=20260610-2" type="module"></script>
 </body>
 </html>

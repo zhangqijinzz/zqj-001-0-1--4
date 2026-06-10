@@ -1,4 +1,4 @@
-import { Thought } from './Thought.js';
+import { Thought } from './Thought.js?v=20260610';
 import { storage } from '../core/Storage.js';
 import { eventBus } from '../core/EventBus.js';
 import { deepClone } from '../core/utils.js';
@@ -88,6 +88,21 @@ export class ThoughtCollection {
             eventBus.emit('thoughts:removed', removed);
         }
         return removed;
+    }
+
+    updateCategoryMany(ids, newCategory) {
+        const updated = [];
+        ids.forEach(id => {
+            const thought = this.getById(id);
+            if (thought && thought.updateCategory(newCategory)) {
+                updated.push(thought);
+            }
+        });
+        if (updated.length > 0) {
+            this.save();
+            eventBus.emit('thoughts:categoryUpdated', { thoughts: updated, category: newCategory });
+        }
+        return updated;
     }
 
     filterByCategory(category) {

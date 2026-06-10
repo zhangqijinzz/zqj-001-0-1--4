@@ -25,6 +25,12 @@ export class Thought {
         return true;
     }
 
+    updateCategory(newCategory) {
+        if (newCategory === this.category) return false;
+        this.category = newCategory;
+        return true;
+    }
+
     getEditHistory() {
         return [...this.editHistory];
     }

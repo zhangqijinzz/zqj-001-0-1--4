@@ -37,6 +37,18 @@ export class TomorrowBox {
         return item;
     }
 
+    addMany(texts) {
+        const items = texts.map(text => ({
+            id: generateId(),
+            text,
+            createdAt: new Date().toISOString()
+        }));
+        this.items.push(...items);
+        this.save();
+        eventBus.emit('tomorrow:addedMany', items);
+        return items;
+    }
+
     remove(id) {
         const index = this.items.findIndex(t => t.id === id);
         if (index === -1) return null;

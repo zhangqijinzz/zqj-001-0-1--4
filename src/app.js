@@ -1,7 +1,7 @@
 import { eventBus } from './core/EventBus.js';
 import { escapeHtml, formatDateTime, formatDateForInput, getTimeSlot, getTimeSlotLabel, getCategoryLabel, downloadJson, copyToClipboard, animateValue } from './core/utils.js';
-import { ThoughtCollection } from './models/ThoughtCollection.js';
-import { TomorrowBox } from './models/TomorrowBox.js';
+import { ThoughtCollection } from './models/ThoughtCollection.js?v=20260610';
+import { TomorrowBox } from './models/TomorrowBox.js?v=20260610';
 import { audioService } from './services/AudioService.js';
 import { searchService } from './services/SearchService.js';
 import { backupService } from './services/BackupService.js';
@@ -23,6 +23,9 @@ class BrainDumpApp {
         this.lastSelectedCategory = 'todo';
         this.editingThoughtId = null;
         this.expandedHistoryIds = new Set();
+        
+        this.isBatchMode = false;
+        this.selectedThoughtIds = new Set();
         
         this.init();
     }
@@ -49,6 +52,7 @@ class BrainDumpApp {
             this.showToast('已撤销: ' + data.description);
             searchService.buildIndex(this.thoughtCollection.getAll().map(t => t.toJSON()));
             insightsAnalyzer.setThoughts(this.thoughtCollection.getAll().map(t => t.toJSON()));
+            this.cleanupSelectedIds();
             this.updateView();
             this.renderBreatheList();
             this.renderTomorrowList();
@@ -58,6 +62,7 @@ class BrainDumpApp {
             this.showToast('已重做: ' + data.description);
             searchService.buildIndex(this.thoughtCollection.getAll().map(t => t.toJSON()));
             insightsAnalyzer.setThoughts(this.thoughtCollection.getAll().map(t => t.toJSON()));
+            this.cleanupSelectedIds();
             this.updateView();
             this.renderBreatheList();
             this.renderTomorrowList();
@@ -92,6 +97,7 @@ class BrainDumpApp {
         this.setupSearchSystem();
         this.setupInsights();
         this.setupReminderSystem();
+        this.setupBatchOperations();
     }
 
     setupUI() {
@@ -117,6 +123,10 @@ class BrainDumpApp {
             content.classList.toggle('active', content.id === tabName);
         });
         this.currentTab = tabName;
+        
+        if (tabName !== 'jot' && this.isBatchMode) {
+            this.toggleBatchMode(false);
+        }
         
         if (tabName === 'insights') {
             setTimeout(() => this.updateInsights(), 100);
@@ -335,10 +345,12 @@ class BrainDumpApp {
                 const isEditing = this.editingThoughtId === item.id;
                 const hasHistory = item.editHistory && item.editHistory.length > 1;
                 const isHistoryExpanded = this.expandedHistoryIds.has(item.id);
+                const isSelected = this.selectedThoughtIds.has(item.id);
 
                 if (isEditing) {
                     return `
                         <div class="thought-item editing">
+                            ${this.isBatchMode ? `<div class="batch-checkbox-placeholder"></div>` : ''}
                             <textarea 
                                 class="edit-input" 
                                 data-edit-id="${item.id}"
@@ -353,7 +365,12 @@ class BrainDumpApp {
                 }
 
                 return `
-                    <div class="thought-item">
+                    <div class="thought-item ${isSelected ? 'selected' : ''}" data-thought-id="${item.id}">
+                        ${this.isBatchMode ? `
+                            <div class="batch-checkbox ${isSelected ? 'checked' : ''}" data-thought-id="${item.id}">
+                                <span class="checkbox-icon">${isSelected ? '✓' : ''}</span>
+                            </div>
+                        ` : ''}
                         <span class="text" onclick="window.app.startEditThought('${item.id}')" title="点击编辑">${escapeHtml(item.text)}</span>
                         <div class="actions">
                             ${hasHistory ? `<button onclick="window.app.toggleHistory('${item.id}')" title="查看修改历史" class="history-btn ${isHistoryExpanded ? 'active' : ''}">📜</button>` : ''}
@@ -1040,10 +1057,12 @@ class BrainDumpApp {
             const createdAt = new Date(item.createdAt);
             const hour = createdAt.getHours();
             const timeSlot = getTimeSlot(hour);
+            const isSelected = this.selectedThoughtIds.has(item.id);
 
             if (isEditing) {
                 return `
                     <div class="search-result-item editing">
+                        ${this.isBatchMode ? `<div class="batch-checkbox-placeholder"></div>` : ''}
                         <div class="result-meta">
                             <span class="result-category cat-${item.category}">${getCategoryLabel(item.category)}</span>
                             <span class="result-time">
@@ -1065,7 +1084,12 @@ class BrainDumpApp {
             }
 
             return `
-                <div class="search-result-item">
+                <div class="search-result-item ${isSelected ? 'selected' : ''}" data-thought-id="${item.id}">
+                    ${this.isBatchMode ? `
+                        <div class="batch-checkbox ${isSelected ? 'checked' : ''}" data-thought-id="${item.id}">
+                            <span class="checkbox-icon">${isSelected ? '✓' : ''}</span>
+                        </div>
+                    ` : ''}
                     <div class="result-meta">
                         <span class="result-category cat-${item.category}">${getCategoryLabel(item.category)}</span>
                         <span class="result-time">
@@ -1365,6 +1389,266 @@ class BrainDumpApp {
         } else {
             infoEl.style.display = 'none';
         }
+    }
+
+    setupBatchOperations() {
+        const toggleBtn = document.getElementById('toggleBatchBtn');
+        const cancelBtn = document.getElementById('cancelBatchBtn');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const invertSelectBtn = document.getElementById('invertSelectBtn');
+        const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+        const batchTomorrowBtn = document.getElementById('batchTomorrowBtn');
+        const batchCatBtns = document.querySelectorAll('.batch-cat');
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => this.toggleBatchMode());
+        }
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => this.toggleBatchMode(false));
+        }
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => this.selectAll());
+        }
+        if (invertSelectBtn) {
+            invertSelectBtn.addEventListener('click', () => this.invertSelection());
+        }
+        if (batchDeleteBtn) {
+            batchDeleteBtn.addEventListener('click', () => this.batchDelete());
+        }
+        if (batchTomorrowBtn) {
+            batchTomorrowBtn.addEventListener('click', () => this.batchMoveToTomorrow());
+        }
+        batchCatBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const category = btn.dataset.batchCategory;
+                this.batchUpdateCategory(category);
+            });
+        });
+
+        this.setupBatchEventDelegation();
+        this.setupBatchKeyboardShortcuts();
+    }
+
+    setupBatchKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            if (this.currentTab !== 'jot') return;
+            
+            if (e.key === 'Escape' && this.isBatchMode) {
+                e.preventDefault();
+                this.toggleBatchMode(false);
+            }
+            
+            const isMod = e.ctrlKey || e.metaKey;
+            if (isMod && e.key.toLowerCase() === 'a' && this.isBatchMode) {
+                e.preventDefault();
+                this.selectAll();
+            }
+            
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (this.isBatchMode && this.selectedThoughtIds.size > 0) {
+                    const activeElement = document.activeElement;
+                    const isInputActive = activeElement && 
+                        (activeElement.tagName === 'INPUT' || 
+                         activeElement.tagName === 'TEXTAREA' ||
+                         activeElement.isContentEditable);
+                    if (!isInputActive) {
+                        e.preventDefault();
+                        this.batchDelete();
+                    }
+                }
+            }
+        });
+    }
+
+    setupBatchEventDelegation() {
+        const normalView = document.getElementById('normalView');
+        const searchResultsView = document.getElementById('searchResultsView');
+
+        const handleItemClick = (e) => {
+            if (!this.isBatchMode) return;
+            
+            const thoughtItem = e.target.closest('.thought-item, .search-result-item');
+            if (!thoughtItem) return;
+            
+            if (e.target.closest('button') || e.target.closest('textarea') || e.target.closest('.edit-actions') || e.target.closest('.history-btn')) {
+                return;
+            }
+            
+            const thoughtId = thoughtItem.dataset.thoughtId;
+            if (thoughtId) {
+                e.preventDefault();
+                this.toggleThoughtSelection(thoughtId);
+            }
+        };
+
+        if (normalView) {
+            normalView.addEventListener('click', handleItemClick);
+        }
+        if (searchResultsView) {
+            searchResultsView.addEventListener('click', handleItemClick);
+        }
+    }
+
+    toggleBatchMode(enable) {
+        if (enable === undefined) {
+            this.isBatchMode = !this.isBatchMode;
+        } else {
+            this.isBatchMode = enable;
+        }
+
+        const toolbar = document.getElementById('batchToolbar');
+        const toggleBtn = document.getElementById('toggleBatchBtn');
+
+        if (toolbar) {
+            toolbar.style.display = this.isBatchMode ? 'flex' : 'none';
+        }
+        if (toggleBtn) {
+            toggleBtn.classList.toggle('active', this.isBatchMode);
+        }
+
+        if (!this.isBatchMode) {
+            this.clearSelection();
+        }
+
+        this.updateView();
+        this.renderBreatheList();
+    }
+
+    toggleThoughtSelection(thoughtId) {
+        if (this.selectedThoughtIds.has(thoughtId)) {
+            this.selectedThoughtIds.delete(thoughtId);
+        } else {
+            this.selectedThoughtIds.add(thoughtId);
+        }
+        this.updateSelectedCount();
+        this.updateView();
+    }
+
+    getCurrentVisibleThoughtIds() {
+        if (this.hasActiveFilters()) {
+            const results = searchService.getFilteredAndSorted(
+                this.thoughtCollection.getAll().map(t => t.toJSON())
+            );
+            return results.map(r => r.id);
+        } else {
+            return this.thoughtCollection.getAll().map(t => t.id);
+        }
+    }
+
+    selectAll() {
+        const visibleIds = this.getCurrentVisibleThoughtIds();
+        visibleIds.forEach(id => this.selectedThoughtIds.add(id));
+        this.updateSelectedCount();
+        this.updateView();
+    }
+
+    invertSelection() {
+        const visibleIds = this.getCurrentVisibleThoughtIds();
+        visibleIds.forEach(id => {
+            if (this.selectedThoughtIds.has(id)) {
+                this.selectedThoughtIds.delete(id);
+            } else {
+                this.selectedThoughtIds.add(id);
+            }
+        });
+        this.updateSelectedCount();
+        this.updateView();
+    }
+
+    clearSelection() {
+        this.selectedThoughtIds.clear();
+        this.updateSelectedCount();
+    }
+
+    cleanupSelectedIds() {
+        const existingIds = new Set(this.thoughtCollection.getAll().map(t => t.id));
+        let changed = false;
+        for (const id of this.selectedThoughtIds) {
+            if (!existingIds.has(id)) {
+                this.selectedThoughtIds.delete(id);
+                changed = true;
+            }
+        }
+        if (changed) {
+            this.updateSelectedCount();
+        }
+    }
+
+    updateSelectedCount() {
+        const countEl = document.getElementById('selectedCount');
+        if (countEl) {
+            countEl.textContent = this.selectedThoughtIds.size;
+        }
+    }
+
+    batchDelete() {
+        if (this.selectedThoughtIds.size === 0) {
+            this.showToast('请先选择要删除的条目');
+            return;
+        }
+
+        const count = this.selectedThoughtIds.size;
+        if (!confirm(`确定要删除选中的 ${count} 条记录吗？`)) {
+            return;
+        }
+
+        const ids = Array.from(this.selectedThoughtIds);
+        undoRedoManager.takeSnapshot(`批量删除 ${count} 条记录`);
+        
+        this.thoughtCollection.removeMany(ids);
+        searchService.buildIndex(this.thoughtCollection.getAll().map(t => t.toJSON()));
+        insightsAnalyzer.setThoughts(this.thoughtCollection.getAll().map(t => t.toJSON()));
+        
+        this.clearSelection();
+        this.updateView();
+        this.renderBreatheList();
+        this.showToast(`已删除 ${count} 条记录`);
+    }
+
+    batchUpdateCategory(category) {
+        if (this.selectedThoughtIds.size === 0) {
+            this.showToast('请先选择要修改的条目');
+            return;
+        }
+
+        const categoryNames = { todo: '待办', worry: '担忧', idea: '灵感' };
+        const count = this.selectedThoughtIds.size;
+        const ids = Array.from(this.selectedThoughtIds);
+
+        undoRedoManager.takeSnapshot(`批量修改为${categoryNames[category] || category}`);
+        
+        this.thoughtCollection.updateCategoryMany(ids, category);
+        searchService.buildIndex(this.thoughtCollection.getAll().map(t => t.toJSON()));
+        insightsAnalyzer.setThoughts(this.thoughtCollection.getAll().map(t => t.toJSON()));
+        
+        this.updateView();
+        this.renderBreatheList();
+        this.showToast(`已将 ${count} 条记录改为${categoryNames[category] || category}`);
+    }
+
+    batchMoveToTomorrow() {
+        if (this.selectedThoughtIds.size === 0) {
+            this.showToast('请先选择要移动的条目');
+            return;
+        }
+
+        const count = this.selectedThoughtIds.size;
+        const ids = Array.from(this.selectedThoughtIds);
+        const thoughts = ids.map(id => this.thoughtCollection.getById(id)).filter(Boolean);
+        const texts = thoughts.map(t => t.text);
+
+        undoRedoManager.takeSnapshot(`批量移入明日盒子(${count}条)`);
+        
+        this.tomorrowBox.addMany(texts);
+        this.thoughtCollection.removeMany(ids);
+        searchService.buildIndex(this.thoughtCollection.getAll().map(t => t.toJSON()));
+        insightsAnalyzer.setThoughts(this.thoughtCollection.getAll().map(t => t.toJSON()));
+        
+        this.clearSelection();
+        this.updateView();
+        this.renderBreatheList();
+        this.renderTomorrowList();
+        this.showToast(`已将 ${count} 条记录移入明日盒子 🌅`);
     }
 }
 
