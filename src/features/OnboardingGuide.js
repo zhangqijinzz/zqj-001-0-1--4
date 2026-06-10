@@ -21,8 +21,6 @@ class OnboardingGuide {
     }
 
     buildSteps() {
-        const hasThoughts = document.querySelectorAll('.thought-item, .breathe-item').length > 0;
-        
         this.steps = [
             {
                 id: 'welcome',
@@ -99,7 +97,7 @@ class OnboardingGuide {
             {
                 id: 'complete',
                 title: '✨ 你已经准备好了',
-                description: '记住推荐的使用顺序：先记录思绪 → 再做呼吸练习 → 最后开启入睡仪式。\n\n随时可以点击右上角的"帮助"按钮重新查看此引导。现在，开始清空你的大脑吧！',
+                description: '记住推荐的使用顺序：先记录思绪 → 再做呼吸练习 → 最后开启入睡仪式。\n\n随时可以点击右上角的"使用引导"按钮重新查看此引导。现在，开始清空你的大脑吧！',
                 target: null,
                 position: 'center',
                 action: null
@@ -418,7 +416,26 @@ class OnboardingGuide {
     }
 
     shouldShowOnboarding() {
-        return !storage.get('onboardingCompleted', false);
+        if (storage.get('onboardingCompleted', false)) {
+            return false;
+        }
+
+        const allData = storage.getAll();
+        const userDataKeys = ['thoughts', 'tomorrowItems', 'reminderSettings', 
+                             'voiceGuideSettings', 'breathingMode', 'backupLastExport'];
+        
+        const hasUserData = userDataKeys.some(key => {
+            const data = allData[key];
+            if (Array.isArray(data)) {
+                return data.length > 0;
+            }
+            if (typeof data === 'object' && data !== null) {
+                return Object.keys(data).length > 0;
+            }
+            return data !== null && data !== undefined;
+        });
+
+        return !hasUserData;
     }
 
     reset() {
