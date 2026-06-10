@@ -219,6 +219,12 @@ class BrainDumpApp {
         this.thoughtCollection.remove(id);
         searchService.buildIndex(this.thoughtCollection.getAll().map(t => t.toJSON()));
         insightsAnalyzer.setThoughts(this.thoughtCollection.getAll().map(t => t.toJSON()));
+        
+        if (this.isBatchMode && this.selectedThoughtIds.has(id)) {
+            this.selectedThoughtIds.delete(id);
+            this.updateSelectedCount();
+        }
+        
         this.updateView();
         this.renderBreatheList();
     }
@@ -231,6 +237,12 @@ class BrainDumpApp {
             this.thoughtCollection.remove(id);
             searchService.buildIndex(this.thoughtCollection.getAll().map(t => t.toJSON()));
             insightsAnalyzer.setThoughts(this.thoughtCollection.getAll().map(t => t.toJSON()));
+            
+            if (this.isBatchMode && this.selectedThoughtIds.has(id)) {
+                this.selectedThoughtIds.delete(id);
+                this.updateSelectedCount();
+            }
+            
             this.updateView();
             this.renderBreatheList();
             this.renderTomorrowList();
@@ -844,6 +856,7 @@ class BrainDumpApp {
             searchService.buildIndex(this.thoughtCollection.getAll().map(t => t.toJSON()));
             insightsAnalyzer.setThoughts(this.thoughtCollection.getAll().map(t => t.toJSON()));
             
+            this.cleanupSelectedIds();
             this.updateView();
             this.renderTomorrowList();
             this.renderBreatheList();
@@ -872,6 +885,7 @@ class BrainDumpApp {
             searchService.buildIndex(this.thoughtCollection.getAll().map(t => t.toJSON()));
             insightsAnalyzer.setThoughts(this.thoughtCollection.getAll().map(t => t.toJSON()));
             
+            this.cleanupSelectedIds();
             this.updateView();
             this.renderTomorrowList();
             this.renderBreatheList();
