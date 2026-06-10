@@ -12,6 +12,7 @@ import { undoRedoManager } from './features/UndoRedoManager.js';
 import { ritualTimer } from './features/RitualTimer.js';
 import { insightsAnalyzer } from './features/InsightsAnalyzer.js';
 import { chartRenderer } from './ui/ChartRenderer.js';
+import { onboardingGuide } from './features/OnboardingGuide.js';
 
 class BrainDumpApp {
     constructor() {
@@ -47,6 +48,8 @@ class BrainDumpApp {
         
         voiceGuideService.init();
         this.updateBreathingModeUI();
+
+        this.setupOnboardingGuide();
         
         eventBus.on('history:undo', (data) => {
             this.showToast('已撤销: ' + data.description);
@@ -85,6 +88,39 @@ class BrainDumpApp {
         eventBus.on('breathing:stopped', (data) => {
             this.stopBreathingUI();
         });
+    }
+
+    setupOnboardingGuide() {
+        onboardingGuide.init();
+
+        eventBus.on('onboarding:switchTab', (tabName) => {
+            this.switchTab(tabName);
+        });
+
+        eventBus.on('onboarding:completed', () => {
+            this.showToast('引导已完成，祝你好梦 🌙');
+        });
+
+        eventBus.on('onboarding:later', () => {
+            this.showToast('好的，稍后再看 ✨');
+        });
+
+        const helpBtn = document.getElementById('showHelpBtn');
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => {
+                this.startOnboarding();
+            });
+        }
+
+        setTimeout(() => {
+            if (onboardingGuide.shouldShowOnboarding()) {
+                this.startOnboarding();
+            }
+        }, 800);
+    }
+
+    startOnboarding() {
+        onboardingGuide.start();
     }
 
     setupEventListeners() {
